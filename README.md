@@ -1,152 +1,64 @@
-# MyApplication
+# TOOLAN App
 
-一个基于Android的多功能应用程序，集成了底部导航、通知管理、音效播放等核心功能。
+TOOLAN 安卓客户端（纯 Java）。TOOLAN = Tool + LAN，配套的 Go 后端在 [SmerryBeta/TOOLAN](https://github.com/SmerryBeta/TOOLAN)，手机端连上同一局域网即可接入内网文件仓库：手机和电脑互相传文件、收通知，全程不出内网、不耗流量。
 
-## 🚀 项目特性
+## 功能
 
-- **底部导航架构** - 使用Navigation Component实现流畅的页面切换
-- **通知管理系统** - 支持自定义通知渠道和锁屏显示
-- **音效播放功能** - 集成SoundManager管理多种音频效果
-- **HTTP服务端** - 内置轻量级HTTP服务器用于通知触发
-- **现代化UI设计** - 采用Material Design 3组件
+- **控制面板**：内嵌 WebView 直接打开后端网页，浏览/上传/管理仓库文件；文件由 App 自己下载落盘到「下载」目录，不触发系统的"仅 WiFi 下载"、"大文件二次确认"等弹窗
+- **分享直传**：在任何 App 里点"分享"，选 TOOLAN 即可把文件（含多选）上传进仓库，同名文件会先询问是否覆盖
+- **自动发现服务器**：扫描局域网 254 个地址 × 端口（8000 / 旧版 1225），通过 `/server_info` 识别 TOOLAN 后端，不用手填 IP
+- **同步到手机**：电脑端网页勾选"同步到手机"后，服务端经 WebSocket 推送文件邀请，App 后台接收并下载
+- **电脑触发手机通知**：App 内置一个局域网 HTTP 服务（Bearer token 鉴权），电脑发一条 JSON 就能让手机响铃/弹通知，配合三种音效（普通/重要/警报）
+- **传输加密**：与 Go 后端、网页端共用同一套 A1 加密协议（PBKDF2 + AES-GCM 分块信封），开启后链路加密，并有密钥一致性校验
+- **常驻可靠**：前台服务 + WakeLock + 开机自启 + 请求电池优化白名单，WebSocket 断线指数退避自动重连
 
-## 🛠 技术栈
+## 权限说明
 
-### 核心框架
-- **Android SDK** - 最新Android开发平台
-- **Kotlin** - 主要开发语言
-- **Android Gradle Plugin** - 构建工具
-- **Gradle Kotlin DSL** - 构建脚本配置
+| 权限 | 用途 |
+|---|---|
+| `POST_NOTIFICATIONS` | 弹通知（就是干这个的） |
+| `INTERNET` / `ACCESS_WIFI_STATE` | 局域网扫描与通信 |
+| `FOREGROUND_SERVICE` + `WAKE_LOCK` | 常驻后台等推送 |
+| `RECEIVE_BOOT_COMPLETED` | 开机自启 |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | 防休眠断连 |
+| `READ/WRITE_EXTERNAL_STORAGE` | 旧版本系统落盘兼容 |
+| `REQUEST_INSTALL_PACKAGES` | 应用自更新安装 |
 
-### 主要组件
-- **Navigation Component** - 页面导航管理
-- **Data Binding** - 视图绑定
-- **Material Design 3** - UI组件库
-- **AndroidX** - Jetpack组件库
+## 构建
 
-### 网络与服务
-- **内置HTTP服务器** - 用于本地通知触发
-- **WebSocket支持** - 实时通信功能
+需要 JDK 11+、Android SDK（compileSdk 34）。minSdk 28（Android 9），targetSdk 34。
 
-## 📁 项目结构
-
-```
-app/
-├── src/main/java/com/example/myapplication/
-│   ├── services/                 # 后台服务
-│   │   ├── NotifyHttpServer.java # HTTP通知服务
-│   │   └── ...                   # 其他服务
-│   ├── utils/                    # 工具类
-│   │   └── ...                   # 工具方法
-│   ├── MainActivity.java         # 主Activity
-│   ├── SoundManager.java         # 音效管理器
-│   ├── SPUtils.java              # SharedPreferences工具
-│   ├── NotifyNotificationFactory.java # 通知工厂类
-│   └── ...                       # Fragment组件
-├── src/main/res/                 # 资源文件
-│   ├── layout/                   # 布局文件
-│   ├── drawable/                 # 图标资源
-│   ├── values/                   # 字符串、颜色等资源
-│   └── navigation/               # 导航图
-└── build.gradle.kts             # 模块构建配置
-```
-
-## 🔧 环境要求
-
-- **Android Studio** Arctic Fox或更高版本
-- **JDK 11** 或更高版本
-- **Android SDK** API 21+
-- **Gradle** 7.4+
-
-## 🚀 快速开始
-
-### 1. 克隆项目
 ```bash
-git clone https://github.com/你的用户名/MyApplication.git
-cd MyApplication
+gradlew.bat assembleDebug   # Windows
+./gradlew assembleDebug     # macOS / Linux
 ```
 
-### 2. 打开项目
-使用Android Studio打开项目根目录
+产物在 `app/build/outputs/apk/debug/`。签名密钥不入库，正式签名方式见 [RELEASE_BUILD_GUIDE.md](RELEASE_BUILD_GUIDE.md)。
 
-### 3. 同步依赖
-```bash
-./gradlew build
+## 项目结构
+
+```
+app/src/main/java/me/smerrybeta/toolanapp/
+├── MainActivity.java              # 主界面（底部导航：控制面板/设置）
+├── ControlPanelFragment.java      # 内嵌 WebView 的仓库控制面板
+├── SettingsFragment.java          # 服务器地址、密钥等设置
+├── ShareUploadActivity.java       # 系统分享接收入口
+├── NotifyNotificationFactory.java # 通知构建
+├── SoundManager.java              # 通知音效
+├── SPUtils.java                   # 配置存取
+├── AppConfig.java                 # 协议常量（端口/路径/加密头）
+├── services/
+│   ├── NotifyService.java         # 前台常驻服务
+│   ├── NotifyWebSocketClient.java # 连后端 /ws，收同步邀请等事件
+│   ├── NotifyHttpServer.java      # 手机侧 HTTP 服务，收 JSON 触发通知
+│   ├── SyncOfferManager.java      # "同步到手机"文件邀请管理
+│   └── BootReceiver.java          # 开机自启
+└── utils/
+    ├── NetworkScanner.java        # 局域网服务器扫描
+    ├── ServerEndpoint.java        # 服务端点（地址/端口/协议）
+    ├── SharedFileUploader.java    # 上传（含加密分块）
+    ├── WebFileUtils.java          # WebView 下载/保存/分享
+    └── crypto/                    # A1 加密协议（含 JVM 单测）
 ```
 
-### 4. 运行应用
-连接Android设备或启动模拟器，然后运行：
-```bash
-./gradlew installDebug
-```
-
-## 📱 主要功能模块
-
-### 1. 底部导航
-- 集成BottomNavigationView
-- 支持3个主要功能页面切换
-- 流畅的页面过渡动画
-
-### 2. 通知系统
-- 自定义通知渠道管理
-- 支持锁屏显示
-- 可配置震动和音效
-- HTTP接口触发通知
-
-### 3. 音效管理
-- 集成SoundManager类
-- 支持多种音频格式
-- 可配置音量和播放模式
-
-### 4. 设置功能
-- 应用配置管理
-- 用户偏好设置
-- 系统参数调整
-
-## 🛠 开发配置
-
-### gradle.properties 配置
-```properties
-android.useAndroidX=true
-android.nonTransitiveRClass=true
-org.gradle.configuration-cache=true
-```
-
-### 主要依赖
-```kotlin
-implementation 'androidx.navigation:navigation-fragment-ktx:2.7.5'
-implementation 'androidx.navigation:navigation-ui-ktx:2.7.5'
-implementation 'com.google.android.material:material:1.10.0'
-```
-
-## 📊 项目状态
-
-- [x] 基础架构搭建
-- [x] 底部导航实现
-- [x] 通知系统集成
-- [x] 音效播放功能
-- [x] HTTP服务端
-- [ ] 单元测试覆盖
-- [ ] 性能优化
-
-## 🤝 贡献指南
-
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
-
-## 📞 联系方式
-
-项目维护者: [你的名字]  
-邮箱: [你的邮箱]  
-GitHub: [你的GitHub链接]
-
----
-
-**注意**: 请确保在使用前配置好Android开发环境，并根据需要调整项目配置。
+`FirstFragment` / `SecondFragment` / `MessageFragment` 为项目模板残留，未接入底部导航。
