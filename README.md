@@ -2,9 +2,9 @@
 
 TOOLAN 安卓客户端（纯 Java）。TOOLAN = Tool + LAN，配套的 Go 后端在 [SmerryBeta/TOOLAN](https://github.com/SmerryBeta/TOOLAN)，手机端连上同一局域网即可接入内网文件仓库：手机和电脑互相传文件、收通知，全程不出内网、不耗流量。
 
-<img width="600" alt="image" src="https://github.com/user-attachments/assets/fe433ef7-a5b2-43d7-b778-fa290ef806af" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/fe433ef7-a5b2-43d7-b778-fa290ef806af" />
 
-<img width="600" alt="image" src="https://github.com/user-attachments/assets/71576bf5-8e34-40bf-8fcb-b28a351d7244" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/71576bf5-8e34-40bf-8fcb-b28a351d7244" />
 
 ## 功能
 
